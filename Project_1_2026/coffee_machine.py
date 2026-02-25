@@ -9,7 +9,7 @@ class CoffeeVendingMachine(VendingMachine):
         self.strength = 3 
         self.cream = 0
         self.sugar = 0
-
+#leaving comment - Commit? Please!
     # ✅ Helper method (keeps code clean)
     def _has_sufficient_funds(self):
         if self.balance < self.item_price:

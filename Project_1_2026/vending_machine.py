@@ -3,7 +3,7 @@ class VendingMachine:
     A simple class to represent a Vending Machine.
     Teaches: Attributes, Methods, and State Management.
     """
-
+#PLEASE COMMIT
     def __init__(self, item_name, item_price, stock):
         # Attributes: This is the 'State' of our machine
         self.item_name = item_name
