@@ -146,5 +146,5 @@ class PDFMergerApp:
 # 🔵 Entry point of program
 if __name__ == "__main__":
     app = PDFMergerApp()
-    app.menu()1
+    app.menu()
     
