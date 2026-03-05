@@ -1,100 +1,86 @@
 import os
-import sys
 from PyPDF2 import PdfMerger, PdfReader
+from Project_Two_Library import get_library_path
 
-import os
-import sys
-from Project_Two_Library.py import get_library_path
 
 class PDFMergerApp:
     """
-    A menu-driven PDF Merger application.
+    Menu-driven PDF Merger Application
 
-    Teaches:
-    - Object-Oriented Programming (OOP)
-    - File handling
-    - User interaction
-    - Program state management
+    Features:
+    - Loads PDFs from a dedicated library folder
+    - Merges files
+    - Extracts text
+    - Clean file handling with full paths
     """
 
     def __init__(self):
-        # 🔵 Store list of PDF files
-        self.pdf_files = []
-
-        # 🔵 Default output file name
+        self.pdf_files = []              # Stores FULL file paths
         self.output_name = "merged_output.pdf"
 
-#Original load code below; See modified version to pull from downloaded library
     def load_files(self):
         """
-        Scan current directory and store PDF files.
-        """
-        files = os.listdir('.')
-
-        # Filter only PDF files
-        self.pdf_files = [f for f in files if f.endswith('.pdf') and f != self.output_name]
-
-        print(f"\nFound {len(self.pdf_files)} PDF file(s).")
-
-#Updated load code
-    def load_files(self):
-        """
-        Load PDF files from the Project Two Library folder.
+        Load PDF files from Project Two Library folder.
         """
         library_path = get_library_path()
 
         if not os.path.exists(library_path):
             print("\n❌ Library folder not found.")
-        return
+            print("Expected folder: /pdf_library")
+            return
 
         files = os.listdir(library_path)
 
-     # Store full paths (IMPORTANT for merging)
-    self.pdf_files = [
-         os.path.join(library_path, f)
-        for f in files
-        if f.endswith('.pdf') and f != self.output_name
-            ]
+        self.pdf_files = [
+            os.path.join(library_path, f)
+            for f in files
+            if f.endswith(".pdf") and f != self.output_name
+        ]
 
-    print(f"\nFound {len(self.pdf_files)} PDF file(s) in library.")
+        print(f"\n✅ Found {len(self.pdf_files)} PDF file(s).")
 
     def display_files(self):
         """
-        Display available PDF files.
+        Display available PDF files (clean names only).
         """
         if not self.pdf_files:
-            print("\nNo PDF files found.")
+            print("\n⚠️ No PDF files loaded.")
             return
 
-        print("\nAvailable PDF Files:")
+        print("\n📄 Available PDF Files:")
         for i, file in enumerate(self.pdf_files, start=1):
-            print(f"{i}. {file}")
+            print(f"{i}. {os.path.basename(file)}")
 
     def set_output_name(self):
         """
-        Allow user to define output file name.
+        Set output file name.
         """
-        name = input("Enter output file name (without .pdf): ")
+        name = input("Enter output file name (without .pdf): ").strip()
+
+        if not name:
+            print("⚠️ Invalid name.")
+            return
+
         self.output_name = name + ".pdf"
-        print(f"Output file set to: {self.output_name}")
+        print(f"✅ Output file set to: {self.output_name}")
 
     def merge_pdfs(self):
         """
-        Merge all PDF files into one output file.
+        Merge all loaded PDFs.
         """
         if not self.pdf_files:
-            print("\nNo PDFs to merge.")
+            print("\n⚠️ No PDFs loaded. Use option 1 first.")
             return
 
         confirm = input("Merge all PDFs? (y/n): ").lower()
-        if confirm != 'y':
-            print("Merge cancelled.")
+        if confirm != "y":
+            print("❌ Merge cancelled.")
             return
 
         merger = PdfMerger()
 
         for pdf in self.pdf_files:
-            print(f"Adding: {pdf}")
+            print(f"Adding: {os.path.basename(pdf)}")
             merger.append(pdf)
 
         merger.write(self.output_name)
@@ -104,10 +90,10 @@ class PDFMergerApp:
 
     def extract_text(self):
         """
-        BONUS: Extract text from merged PDF into a .txt file.
+        Extract text from merged PDF into a .txt file.
         """
         if not os.path.exists(self.output_name):
-            print("\nMerged file not found. Merge PDFs first.")
+            print("\n⚠️ Merged file not found. Merge first.")
             return
 
         reader = PdfReader(self.output_name)
@@ -121,22 +107,22 @@ class PDFMergerApp:
         with open(txt_name, "w", encoding="utf-8") as f:
             f.write(text)
 
-        print(f"\n📄 Text extracted to: {txt_name}")
+        print(f"\n📝 Text extracted to: {txt_name}")
 
     def show_system_info(self):
         """
-        Display operating system info.
+        Display system information.
         """
-        print("\nSystem Info:")
+        print("\n🖥️ System Info:")
         print("OS Name:", os.name)
 
     def menu(self):
         """
-        Main menu loop (user interface).
+        Main menu loop.
         """
         while True:
             print("\n===== PDF MERGER MENU =====")
-            print("1. Load PDF Files")
+            print("1. Load PDF Files from Library")
             print("2. Show PDF Files")
             print("3. Set Output File Name")
             print("4. Merge PDFs")
@@ -147,7 +133,7 @@ class PDFMergerApp:
             try:
                 choice = int(input("Enter choice: "))
             except ValueError:
-                print("Invalid input. Enter a number.")
+                print("❌ Invalid input. Enter a number.")
                 continue
 
             if choice == 1:
@@ -163,14 +149,12 @@ class PDFMergerApp:
             elif choice == 6:
                 self.show_system_info()
             elif choice == 7:
-                print("Exiting program.")
+                print("👋 Exiting program.")
                 break
             else:
-                print("Invalid selection.")
+                print("❌ Invalid selection.")
 
 
-# 🔵 Entry point of program
 if __name__ == "__main__":
     app = PDFMergerApp()
     app.menu()
-    
