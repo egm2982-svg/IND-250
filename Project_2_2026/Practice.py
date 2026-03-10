@@ -1,7 +1,5 @@
 import os
 from PyPDF2 import PdfMerger, PdfReader
-from Project_Two_Library import get_library_path
-
 
 class PDFMergerApp:
     """
