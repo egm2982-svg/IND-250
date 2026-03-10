@@ -2,7 +2,7 @@ import glob
 from PyPDF2 import PdfWriter
 
 
-def pdf_merger(input_dir="input_pdfs", output_filename="merged_output.pdf"):
+def merge_pdfs(input_dir="input_pdfs", output_filename="merged_output.pdf"):
     """
     Merge all PDF files in a directory into a single PDF.
     
@@ -34,4 +34,4 @@ def pdf_merger(input_dir="input_pdfs", output_filename="merged_output.pdf"):
 
 # Allows the script to run independently if executed directly
 if __name__ == "__main__":
-    pdf_merger()
+    merge_pdfs()

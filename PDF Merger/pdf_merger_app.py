@@ -1,6 +1,5 @@
 import glob
-from pdf_merger import output_pdf
-
+from pdf_merger import merge_pdfs
 
 def scan_pdfs(folder):
     """Scan the folder and return a list of PDF files."""
