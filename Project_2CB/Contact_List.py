@@ -1,43 +1,45 @@
-# Contact_List.py
+import json
 
-FILE_NAME = "contacts.txt" #Pulling from a separate list (text file) - Change to JSON
-
-
-def display_menu(): #Displaying the functional menus by ennumerating; written out 
-    print("\n--- Contact List Menu ---")
-    print(f"(Using file: {FILE_NAME})")
-    print("1. Add Contact")
-    print("2. View Contacts")
-    print("3. Quit")
+FILE_NAME = "contacts.json"
 
 
-# Load contacts from file
-def load_contacts(): #Defining the list and "machine" to add and remove contacts
-    contact_list = []
+# Load contacts from JSON file - Def defines the funciton and the function below is opening the additional json file to read the contacts
+def load_contacts():
     try:
-        with open(FILE_NAME, "r") as file:
-            for line in file:
-                name, phone, email = line.strip().split(",")
-                contact_list.append({ #Append is adding each as it is listed 
-                    "name": name,
-                    "phone": phone,
-                    "email": email
-                })
-    except FileNotFoundError:
-        print(f"\nNo existing file found. A new '{FILE_NAME}' will be created.")
-    return contact_list
+        with open(FILE_NAME) as file:
+            return json.load(file)
+    except:
+        return []
 
 
-# Save contacts to file
-def save_contacts(contact_list): #saving the to txt list, is viewable in txt file
+# Save contacts to JSON file - def defines the function; this will open the the json list and add the data and go back in to read the data - "w" is not needed but pulls the information 
+def save_contacts(contact_list):
     with open(FILE_NAME, "w") as file:
-        for contact in contact_list:
-            file.write(f"{contact['name']},{contact['phone']},{contact['email']}\n")
+        json.dump(contact_list, file, indent=4)
 
 
-def add_contact(contact_list): #display list to show added items
+# Check name (letters only) - def defines the function - is alpha constrains the answerable data to letters only
+def valid_name(name):
+    return name.isalpha() #spaces will not be accepted with function as is - problem for another day
+
+
+# Check phone (numbers only) - def defines the funciton, isdigit is the contraint for the acceptable data for this menu choice, numbers only
+def valid_phone(phone):
+    return phone.isdigit()
+
+
+# Add a contact - def defines the newly added function; this function is fun because it leaves to the json, adds the data and comes back to this file with the information (reads the data from json)
+def add_contact(contact_list):
     name = input("Enter name: ")
+    if not valid_name(name):
+        print("Name must contain only letters.")
+        return
+
     phone = input("Enter phone: ")
+    if not valid_phone(phone):
+        print("Phone must contain only numbers.")
+        return
+
     email = input("Enter email: ")
 
     contact_list.append({
@@ -47,36 +49,76 @@ def add_contact(contact_list): #display list to show added items
     })
 
     save_contacts(contact_list)
-    print(f"\nSaved to {FILE_NAME}.")
+    print("Contact saved.")
 
 
-def view_contacts(contact_list): #defining the print for when there are no items
+# View all contacts - def is defining the action - if allows both the ability to use the funtion if they follow through on the action and if the funciton cannot be completed considereing lack of constraints or information (not listed)
+def view_contacts(contact_list):
     if not contact_list:
-        print("\nNo contacts found.")
+        print("No contacts found.")
         return
 
-    print(f"\n--- Contacts from {FILE_NAME} ---")
-    for contact in contact_list:
-        print(f"{contact['name']} | {contact['phone']} | {contact['email']}")
+    print("\nContacts:")
+    for c in contact_list:
+        print(c["name"], "|", c["phone"], "|", c["email"])
 
 
-def main(): #defining the following actions when using the menu based on the defined actions above
-    contact_list = load_contacts()
+# Search for a contact - def defines the funcion, and the if allows the action and prints an error if no name is found
+def search_contact(contact_list):
+    name = input("Search name: ")
+
+    for c in contact_list:
+        if name.lower() in c["name"].lower():
+            print(c["name"], "|", c["phone"], "|", c["email"])
+            return
+
+    print("Not found.")
+
+
+# Delete a contact - def is defining the action and delete and remove pull the item from the list - if prints errors if the name is not on the list already
+def delete_contact(contact_list):
+    name = input("Delete name: ")
+
+    for c in contact_list:
+        if c["name"].lower() == name.lower():
+            contact_list.remove(c)
+            save_contacts(contact_list)
+            print("Deleted.")
+            return
+
+    print("Not found.")
+
+
+# Menu display - Printed Menu, Here to look pretty, jk, but simply printed text
+def menu():
+    print("\n--- Contact List Menu ---")
+    print("1. Add")
+    print("2. View")
+    print("3. Search")
+    print("4. Delete")
+    print("5. Quit")
+
+
+# Main program - Functional Menu - If/Elif allows the choice of the listed options
+def main():
+    contacts = load_contacts()
 
     while True:
-        display_menu()
-        choice = input("\nChoose (1-3): ")
+        menu()
+        choice = input("Choose: ")
 
         if choice == "1":
-            add_contact(contact_list)
+            add_contact(contacts)
         elif choice == "2":
-            view_contacts(contact_list)
+            view_contacts(contacts)
         elif choice == "3":
-            print("\nGoodbye!")
+            search_contact(contacts)
+        elif choice == "4":
+            delete_contact(contacts)
+        elif choice == "5":
             break
         else:
             print("Invalid choice.")
 
 
-if __name__ == "__main__": #closing code
-    main()
+main()
