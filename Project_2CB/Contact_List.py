@@ -1,9 +1,9 @@
 # Contact_List.py
 
-FILE_NAME = "contacts.txt"
+FILE_NAME = "contacts.txt" #Pulling from a separate list (text file) - Change to JSON
 
 
-def display_menu():
+def display_menu(): #Displaying the functional menus by ennumerating; written out 
     print("\n--- Contact List Menu ---")
     print(f"(Using file: {FILE_NAME})")
     print("1. Add Contact")
@@ -12,13 +12,13 @@ def display_menu():
 
 
 # Load contacts from file
-def load_contacts():
+def load_contacts(): #Defining the list and "machine" to add and remove contacts
     contact_list = []
     try:
         with open(FILE_NAME, "r") as file:
             for line in file:
                 name, phone, email = line.strip().split(",")
-                contact_list.append({
+                contact_list.append({ #Append is adding each as it is listed 
                     "name": name,
                     "phone": phone,
                     "email": email
@@ -29,13 +29,13 @@ def load_contacts():
 
 
 # Save contacts to file
-def save_contacts(contact_list):
+def save_contacts(contact_list): #saving the to txt list, is viewable in txt file
     with open(FILE_NAME, "w") as file:
         for contact in contact_list:
             file.write(f"{contact['name']},{contact['phone']},{contact['email']}\n")
 
 
-def add_contact(contact_list):
+def add_contact(contact_list): #display list to show added items
     name = input("Enter name: ")
     phone = input("Enter phone: ")
     email = input("Enter email: ")
@@ -50,7 +50,7 @@ def add_contact(contact_list):
     print(f"\nSaved to {FILE_NAME}.")
 
 
-def view_contacts(contact_list):
+def view_contacts(contact_list): #defining the print for when there are no items
     if not contact_list:
         print("\nNo contacts found.")
         return
@@ -60,7 +60,7 @@ def view_contacts(contact_list):
         print(f"{contact['name']} | {contact['phone']} | {contact['email']}")
 
 
-def main():
+def main(): #defining the following actions when using the menu based on the defined actions above
     contact_list = load_contacts()
 
     while True:
@@ -78,5 +78,5 @@ def main():
             print("Invalid choice.")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__": #closing code
     main()
