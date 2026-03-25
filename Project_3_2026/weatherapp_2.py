@@ -2,7 +2,9 @@ import requests
 
 def get_10_day_forecast(city, state):
     # Step 1: Get coordinates using the Geocoding API
-    geo_url = "https://geocoding-api.open-meteo.com"
+    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&admin1={state}&count=10&language=en&format=json"
+    geo_response = requests.get(geo_url)
+    geo_data = geo_response.json()
     geo_params = {
         "name": f"{city}, {state}",
         "count": 1,
