@@ -73,30 +73,30 @@ def delete_expense():
     except:
         print("Invalid index.")
 
-def edit_expense():
+def edit_expense(): #Added Function - 
     """Edits an existing expense (Requirement #1)."""
-    df = pd.read_csv(FILE_NAME)
+    df = pd.read_csv(FILE_NAME) #Pulls the CSV file and reads the data
 
-    if df.empty:
+    if df.empty: #Reads the line to be sure there is data to edit 
         print("\n📭 No expenses to edit.")
         return
 
-    print(df)
+    print(df) #Gives error if there is no line
 
-    try:
+    try: #If there is something to edit
         loc = int(input("Enter index to edit: "))
 
-        new_cat = input("New Category: ")
-        new_desc = input("New Description: ")
-        new_amt = float(input("New Amount: "))
+        new_cat = input("New Category: ") #Option for editing input
+        new_desc = input("New Description: ") #Option for new description
+        new_amt = float(input("New Amount: ")) #Option for editing a new amount
 
         # Update row
-        df.loc[loc, "Category"] = new_cat
-        df.loc[loc, "Description"] = new_desc
-        df.loc[loc, "Amount"] = new_amt
+        df.loc[loc, "Category"] = new_cat #This line rewrites the category - Save Over df looks through data frame
+        df.loc[loc, "Description"] = new_desc #This line rewrites the description - loc locates the data in CSV 'dsf'
+        df.loc[loc, "Amount"] = new_amt #new_amt rewrites the input 'new_' saves over the data submission 
 
         # Update timestamp automatically
-        df.loc[loc, "Date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        df.loc[loc, "Date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S") #Using the functions above, datetime / strftime logs the input time
 
         save_sorted(df)
         print("✏️ Expense updated successfully!")
@@ -160,4 +160,4 @@ def main():
             print("Invalid choice.")
 
 if __name__ == "__main__":
-    main()
+    main() 
