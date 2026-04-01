@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import calendar
-from datetime import datetime
+from tkcalendar import Calendar #Import was different - re-wrote prompt to get a better look
+from datetime import datetime, timedelta
 
 # -------------------------------
 # MAIN APPLICATION CLASS
@@ -10,61 +10,86 @@ class CalendarApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Smart Calendar Planner")
-        self.root.geometry("800x600")
+        self.root.geometry("900x650")
 
         # -------------------------------
         # DATA STORAGE
-        # Stores events as:
-        # {date: [(title, category)]}
         # -------------------------------
-        self.events = {}
+        self.events = {}  # {date: [(title, category)]}
 
-        # Category colors
+        # Categories + colors
         self.categories = {
-            "Work": "#FF6B6B",
-            "School": "#4D96FF",
-            "Gym": "#6BCB77",
-            "Personal": "#FFD93D"
+            "Work": "red",
+            "School": "blue",
+            "Gym": "green",
+            "Personal": "gold",
+            "Goals": "purple"
+        }
+
+        self.category_visibility = {
+            k: tk.IntVar(value=1) for k in self.categories
         }
 
         # Current date
         now = datetime.now()
-        self.year = now.year
-        self.month = now.month
+        self.year, self.month = now.year, now.month
 
-        # UI Setup
+        self.view_mode = tk.StringVar(value="Month")
+
         self.create_widgets()
-        self.draw_calendar()
 
     # -------------------------------
     # UI SETUP
     # -------------------------------
     def create_widgets(self):
 
-        # Header (Month navigation)
-        header = tk.Frame(self.root)
-        header.pack(pady=10)
-
-        tk.Button(header, text="<", command=self.prev_month).pack(side="left")
-        self.month_label = tk.Label(header, text="", font=("Arial", 16))
-        self.month_label.pack(side="left", padx=20)
-        tk.Button(header, text=">", command=self.next_month).pack(side="left")
-
-        # Calendar frame
-        self.calendar_frame = tk.Frame(self.root)
-        self.calendar_frame.pack()
+        # -------------------------------
+        # VIEW TOGGLE
+        # -------------------------------
+        ttk.Combobox(
+            self.root,
+            textvariable=self.view_mode,
+            values=["Month", "Week"],
+            state="readonly"
+        ).pack(pady=5)
 
         # -------------------------------
-        # EVENT INPUT SECTION
+        # CATEGORY FILTERS
+        # -------------------------------
+        filter_frame = tk.Frame(self.root)
+        filter_frame.pack()
+
+        for cat in self.categories:
+            tk.Checkbutton(
+                filter_frame,
+                text=cat,
+                variable=self.category_visibility[cat],
+                command=self.refresh_calendar
+            ).pack(side="left")
+
+        # -------------------------------
+        # TKCALENDAR WIDGET
+        # -------------------------------
+        self.cal = Calendar(
+            self.root,
+            selectmode="day",
+            year=self.year,
+            month=self.month,
+            date_pattern="yyyy-mm-dd"
+        )
+        self.cal.pack(pady=10)
+
+        # -------------------------------
+        # EVENT INPUT
         # -------------------------------
         form = tk.Frame(self.root)
         form.pack(pady=10)
 
-        tk.Label(form, text="Date (YYYY-MM-DD):").grid(row=0, column=0)
-        self.date_entry = tk.Entry(form)
-        self.date_entry.grid(row=0, column=1)
+        tk.Label(form, text="Selected Date:").grid(row=0, column=0)
+        self.date_label = tk.Label(form, text="")
+        self.date_label.grid(row=0, column=1)
 
-        tk.Label(form, text="Event Title:").grid(row=1, column=0)
+        tk.Label(form, text="Event:").grid(row=1, column=0)
         self.title_entry = tk.Entry(form)
         self.title_entry.grid(row=1, column=1)
 
@@ -78,135 +103,132 @@ class CalendarApp:
             state="readonly"
         ).grid(row=2, column=1)
 
-        # Add event button
-        tk.Button(form, text="Add Event", command=self.add_event, bg="#4CAF50", fg="white").grid(
-            row=3, column=0, columnspan=2, pady=5
-        )
+        tk.Button(form, text="Add Event", command=self.add_event).grid(row=3, column=0, columnspan=2)
+
+        # Countdown label
+        self.countdown_label = tk.Label(self.root, fg="red")
+        self.countdown_label.pack()
 
         # -------------------------------
-        # TEMPLATE SECTION
+        # TEMPLATE BUTTONS
         # -------------------------------
         template_frame = tk.Frame(self.root)
         template_frame.pack(pady=10)
 
-        tk.Label(template_frame, text="Schedule Templates:").pack()
+        tk.Button(template_frame, text="Work Week", command=self.apply_work_template).pack(side="left")
+        tk.Button(template_frame, text="Student", command=self.apply_student_template).pack(side="left")
+        tk.Button(template_frame, text="Fitness", command=self.apply_fitness_template).pack(side="left")
 
-        tk.Button(template_frame, text="Work Week Template", command=self.apply_work_template).pack(side="left", padx=5)
-        tk.Button(template_frame, text="Student Template", command=self.apply_student_template).pack(side="left", padx=5)
-        tk.Button(template_frame, text="Fitness Template", command=self.apply_fitness_template).pack(side="left", padx=5)
+        # -------------------------------
+        # WEEK VIEW DISPLAY
+        # -------------------------------
+        self.week_frame = tk.Frame(self.root)
+        self.week_frame.pack()
 
-    # -------------------------------
-    # DRAW CALENDAR
-    # -------------------------------
-    def draw_calendar(self):
-
-        # Clear previous calendar
-        for widget in self.calendar_frame.winfo_children():
-            widget.destroy()
-
-        self.month_label.config(text=f"{calendar.month_name[self.month]} {self.year}")
-
-        cal = calendar.monthcalendar(self.year, self.month)
-
-        # Days of week header
-        days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-        for col, day in enumerate(days):
-            tk.Label(self.calendar_frame, text=day, font=("Arial", 10, "bold")).grid(row=0, column=col)
-
-        # Fill calendar
-        for row_idx, week in enumerate(cal, start=1):
-            for col_idx, day in enumerate(week):
-                if day == 0:
-                    continue
-
-                date_str = f"{self.year}-{self.month:02d}-{day:02d}"
-
-                # Frame for each day
-                frame = tk.Frame(self.calendar_frame, borderwidth=1, relief="solid", width=100, height=80)
-                frame.grid(row=row_idx, column=col_idx, padx=2, pady=2)
-                frame.grid_propagate(False)
-
-                tk.Label(frame, text=str(day)).pack(anchor="nw")
-
-                # Display events
-                if date_str in self.events:
-                    for title, category in self.events[date_str]:
-                        tk.Label(
-                            frame,
-                            text=title,
-                            bg=self.categories.get(category, "white"),
-                            wraplength=80
-                        ).pack(fill="x")
+        # Bind date selection
+        self.cal.bind("<<CalendarSelected>>", self.update_selected_date)
 
     # -------------------------------
-    # ADD EVENT
+    # EVENT HANDLING
     # -------------------------------
+    def update_selected_date(self, event):
+        date = self.cal.get_date()
+        self.date_label.config(text=date)
+        self.refresh_week_view()
+
     def add_event(self):
-        date = self.date_entry.get()
+        date = self.cal.get_date()
         title = self.title_entry.get()
-        category = self.category_var.get()
+        cat = self.category_var.get()
 
-        if not date or not title:
-            messagebox.showwarning("Input Error", "Please fill all fields")
+        if not title:
+            messagebox.showwarning("Error", "Enter an event title")
             return
 
-        if date not in self.events:
-            self.events[date] = []
+        self.events.setdefault(date, []).append((title, cat))
 
-        self.events[date].append((title, category))
+        # Highlight date in calendar
+        self.cal.calevent_create(date, title, tags=cat)
+        self.cal.tag_config(cat, background=self.categories[cat])
 
-        self.draw_calendar()
+        self.update_countdown()
+        self.refresh_week_view()
+
+    def update_countdown(self):
+        today = datetime.now()
+        future = []
+
+        for d in self.events:
+            dt = datetime.strptime(d, "%Y-%m-%d")
+            if dt >= today:
+                future.append((dt, self.events[d][0][0]))
+
+        if future:
+            nearest = min(future, key=lambda x: x[0])
+            days = (nearest[0] - today).days
+            self.countdown_label.config(text=f"Next: {nearest[1]} in {days} days")
+
+    # -------------------------------
+    # WEEK VIEW
+    # -------------------------------
+    def refresh_week_view(self):
+        for w in self.week_frame.winfo_children():
+            w.destroy()
+
+        if self.view_mode.get() != "Week":
+            return
+
+        selected = datetime.strptime(self.cal.get_date(), "%Y-%m-%d")
+        week = [selected + timedelta(days=i) for i in range(7)]
+
+        for i, day in enumerate(week):
+            frame = tk.Frame(self.week_frame, width=120, height=150, bd=1, relief="solid")
+            frame.grid(row=0, column=i)
+            frame.grid_propagate(False)
+
+            tk.Label(frame, text=day.strftime("%a\n%d")).pack()
+
+            date_str = day.strftime("%Y-%m-%d")
+
+            if date_str in self.events:
+                for title, cat in self.events[date_str]:
+                    if self.category_visibility[cat].get():
+                        tk.Label(frame, text=title, bg=self.categories[cat]).pack(fill="x")
+
+    def refresh_calendar(self):
+        """Refresh calendar filtering"""
+        self.cal.calevent_remove("all")
+
+        for date in self.events:
+            for title, cat in self.events[date]:
+                if self.category_visibility[cat].get():
+                    self.cal.calevent_create(date, title, tags=cat)
+                    self.cal.tag_config(cat, background=self.categories[cat])
+
+        self.refresh_week_view()
 
     # -------------------------------
     # TEMPLATE FUNCTIONS
     # -------------------------------
     def apply_work_template(self):
-        """Adds a standard 9–5 work schedule for weekdays"""
-        for day in range(1, 29):
-            date = f"{self.year}-{self.month:02d}-{day:02d}"
-            weekday = datetime(self.year, self.month, day).weekday()
-
-            if weekday < 5:  # Monday-Friday
+        for i in range(1, 29):
+            date = f"{self.year}-{self.month:02d}-{i:02d}"
+            if datetime(self.year, self.month, i).weekday() < 5:
                 self.events.setdefault(date, []).append(("Work 9-5", "Work"))
-
-        self.draw_calendar()
+        self.refresh_calendar()
 
     def apply_student_template(self):
-        """Adds school + study schedule"""
-        for day in range(1, 29):
-            date = f"{self.year}-{self.month:02d}-{day:02d}"
-            weekday = datetime(self.year, self.month, day).weekday()
-
-            if weekday < 5:
+        for i in range(1, 29):
+            date = f"{self.year}-{self.month:02d}-{i:02d}"
+            if datetime(self.year, self.month, i).weekday() < 5:
                 self.events.setdefault(date, []).append(("Classes", "School"))
-                self.events.setdefault(date, []).append(("Study", "School"))
-
-        self.draw_calendar()
+        self.refresh_calendar()
 
     def apply_fitness_template(self):
-        """Adds gym routine every other day"""
-        for day in range(1, 29, 2):
-            date = f"{self.year}-{self.month:02d}-{day:02d}"
+        for i in range(1, 29, 2):
+            date = f"{self.year}-{self.month:02d}-{i:02d}"
             self.events.setdefault(date, []).append(("Workout", "Gym"))
-
-        self.draw_calendar()
-
-    # -------------------------------
-    # MONTH NAVIGATION
-    # -------------------------------
-    def prev_month(self):
-        self.month -= 1
-        if self.month == 0:
-            self.month = 12
-            self.year -= 1
-        self.draw_calendar()
-
-    def next_month(self):
-        self.month += 1
-        if self.month == 13:
-            self.month = 1
-            self.year += 1
-        self.draw_calendar()
+        self.refresh_calendar()
 
 
 # -------------------------------
