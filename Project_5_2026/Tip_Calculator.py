@@ -11,4 +11,5 @@ def
 #Checkbutton needs a variable to pull and push information to - txtt with A and B can be used as .pack(anchor) to creat options
 #lb=tk.Listbox(root) #lb.insert(#value)
 #canvas can draw mathematical equations - use for formulas
+#see notes from Week 12
 root.mainloop() #checking and waiting for input END
