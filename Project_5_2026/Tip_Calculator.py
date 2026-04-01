@@ -13,97 +13,132 @@
 #canvas can draw mathematical equations - use for formulas
 #see notes from Week 12
 #root.mainloop() #checking and waiting for input END
-import tkinter as tk
-from tkinter import ttk, messagebox
+# -------------------------------
+# IMPORTS
+# -------------------------------
+import tkinter as tk  # Core GUI library
+from tkinter import ttk
+import ttkbootstrap as tb  # Modern styling (BONUS)
 
+# -------------------------------
+# CLASS-BASED APPLICATION
+# -------------------------------
 class TipCalculatorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Tip Calculator")
-        self.root.geometry("400x350")
+        self.root.title("Advanced Tip Calculator")
+        self.root.geometry("450x400")
 
         # -------------------------------
-        # VARIABLES (Tkinter Variables)
+        # VARIABLES (store input/output)
         # -------------------------------
-        self.bill_amount = tk.StringVar()
-        self.tip_percentage = tk.StringVar(value="15%")
-        self.num_people = tk.IntVar(value=1)
+        self.bill_var = tk.StringVar()
+        self.tip_var = tk.StringVar(value="15%")
+        self.people_var = tk.IntVar(value=1)
 
-        self.tip_amount = tk.StringVar()
-        self.total_amount = tk.StringVar()
-        self.per_person = tk.StringVar()
+        # Extra widgets
+        self.round_var = tk.IntVar()  # checkbox (round up option)
+
+        self.tip_result = tk.StringVar()
+        self.total_result = tk.StringVar()
+        self.per_person_result = tk.StringVar()
 
         # Build UI
         self.create_widgets()
 
-        # Trace changes (AUTO CALCULATE)
-        self.bill_amount.trace_add("write", self.calculate)
-        self.tip_percentage.trace_add("write", self.calculate)
-        self.num_people.trace_add("write", self.calculate)
+        # AUTO UPDATE (no button needed)
+        self.bill_var.trace_add("write", self.calculate)
+        self.tip_var.trace_add("write", self.calculate)
+        self.people_var.trace_add("write", self.calculate)
+        self.round_var.trace_add("write", self.calculate)
 
+    # -------------------------------
+    # UI CREATION FUNCTION
+    # -------------------------------
     def create_widgets(self):
-        """Create and place all widgets"""
+
+        # Label
+        tk.Label(self.root, text="Enter Bill Amount ($):").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+
+        # Entry (user input)
+        entry1 = tk.Entry(self.root, textvariable=self.bill_var)
+        entry1.grid(row=0, column=1)
 
         # -------------------------------
-        # BILL INPUT
+        # TIP DROPDOWN (Combobox)
         # -------------------------------
-        tk.Label(self.root, text="Enter Bill Amount ($):").pack(pady=5)
-        tk.Entry(self.root, textvariable=self.bill_amount).pack()
+        tk.Label(self.root, text="Tip Percentage:").grid(row=1, column=0, sticky="w")
 
-        # -------------------------------
-        # TIP SELECTION (Dropdown)
-        # -------------------------------
-        tk.Label(self.root, text="Select Tip Percentage:").pack(pady=5)
         tip_menu = ttk.Combobox(
             self.root,
-            textvariable=self.tip_percentage,
+            textvariable=self.tip_var,
             values=["10%", "15%", "20%"],
             state="readonly"
         )
-        tip_menu.pack()
+        tip_menu.grid(row=1, column=1)
 
         # -------------------------------
-        # NUMBER OF PEOPLE
+        # NUMBER OF PEOPLE (Spinbox)
         # -------------------------------
-        tk.Label(self.root, text="Number of Diners:").pack(pady=5)
-        people_spinbox = tk.Spinbox(
+        tk.Label(self.root, text="Number of Diners:").grid(row=2, column=0, sticky="w")
+
+        spin = tk.Spinbox(self.root, from_=1, to=6, textvariable=self.people_var)
+        spin.grid(row=2, column=1)
+
+        # -------------------------------
+        # CHECKBOX (From your notes)
+        # -------------------------------
+        tk.Checkbutton(
             self.root,
-            from_=1,
-            to=6,
-            textvariable=self.num_people,
-            width=5
-        )
-        people_spinbox.pack()
+            text="Round Up Per Person",
+            variable=self.round_var
+        ).grid(row=3, column=0, columnspan=2, sticky="w")
 
         # -------------------------------
-        # RESULTS DISPLAY
+        # LISTBOX (From your notes)
+        # Shows quick tip suggestions
         # -------------------------------
-        tk.Label(self.root, text="Tip Amount:").pack(pady=5)
-        tk.Label(self.root, textvariable=self.tip_amount, fg="green").pack()
+        tk.Label(self.root, text="Tip Suggestions:").grid(row=4, column=0, sticky="w")
 
-        tk.Label(self.root, text="Total Bill (with Tip):").pack(pady=5)
-        tk.Label(self.root, textvariable=self.total_amount, fg="blue").pack()
+        self.listbox = tk.Listbox(self.root, height=3)
+        self.listbox.insert(1, "Good Service (15%)")
+        self.listbox.insert(2, "Great Service (20%)")
+        self.listbox.insert(3, "Excellent (25%)")
+        self.listbox.grid(row=4, column=1)
 
-        tk.Label(self.root, text="Amount Per Person:").pack(pady=5)
-        tk.Label(self.root, textvariable=self.per_person, fg="purple").pack()
+        # -------------------------------
+        # OUTPUT LABELS
+        # -------------------------------
+        tk.Label(self.root, text="Tip Amount:").grid(row=5, column=0, sticky="w")
+        tk.Label(self.root, textvariable=self.tip_result).grid(row=5, column=1)
+
+        tk.Label(self.root, text="Total Bill:").grid(row=6, column=0, sticky="w")
+        tk.Label(self.root, textvariable=self.total_result).grid(row=6, column=1)
+
+        tk.Label(self.root, text="Per Person:").grid(row=7, column=0, sticky="w")
+        tk.Label(self.root, textvariable=self.per_person_result).grid(row=7, column=1)
 
         # -------------------------------
         # EXIT BUTTON
+        # command defines action when clicked
         # -------------------------------
-        tk.Button(self.root, text="Exit", command=self.root.quit, bg="red", fg="white").pack(pady=20)
+        tk.Button(self.root, text="Exit", command=self.root.destroy, bg="red", fg="white").grid(
+            row=8, column=0, columnspan=2, pady=10
+        )
 
+    # -------------------------------
+    # CALCULATION FUNCTION
+    # -------------------------------
     def calculate(self, *args):
-        """Automatically calculate tip, total, and split"""
-
         try:
-            # Get bill amount and convert to float
-            bill = float(self.bill_amount.get())
+            # Convert bill input to float
+            bill = float(self.bill_var.get())
 
-            # Extract tip percentage (remove % symbol)
-            tip_percent = int(self.tip_percentage.get().replace("%", "")) / 100
+            # Convert tip percentage
+            tip_percent = int(self.tip_var.get().replace("%", "")) / 100
 
             # Number of people
-            people = self.num_people.get()
+            people = self.people_var.get()
 
             # -------------------------------
             # CALCULATIONS
@@ -112,24 +147,28 @@ class TipCalculatorApp:
             total = bill + tip
             per_person = total / people
 
+            # OPTIONAL ROUNDING (checkbox)
+            if self.round_var.get() == 1:
+                per_person = round(per_person)
+
             # -------------------------------
-            # UPDATE DISPLAY
+            # DISPLAY RESULTS
             # -------------------------------
-            self.tip_amount.set(f"${tip:.2f}")
-            self.total_amount.set(f"${total:.2f}")
-            self.per_person.set(f"${per_person:.2f}")
+            self.tip_result.set(f"${tip:.2f}")
+            self.total_result.set(f"${total:.2f}")
+            self.per_person_result.set(f"${per_person:.2f}")
 
         except ValueError:
             # Handles non-numeric input
-            self.tip_amount.set("Invalid input")
-            self.total_amount.set("Invalid input")
-            self.per_person.set("Invalid input")
+            self.tip_result.set("Invalid")
+            self.total_result.set("Invalid")
+            self.per_person_result.set("Invalid")
 
 
 # -------------------------------
 # MAIN PROGRAM
 # -------------------------------
 if __name__ == "__main__":
-    root = tk.Tk()
+    root = tb.Window(themename="cosmo")  # ttkbootstrap theme
     app = TipCalculatorApp(root)
     root.mainloop()
