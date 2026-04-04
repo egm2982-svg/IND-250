@@ -1,7 +1,7 @@
-import tkinter as tk
+import tkinter as tk #Import the tools and exe needed for the project
 from tkinter import ttk
 
-class TipCalculatorApp:
+class TipCalculatorApp: #The Machine - Userface titles and options
     def __init__(self, root):
         self.root = root
         self.root.title("Smart Tip App")
@@ -24,7 +24,7 @@ class TipCalculatorApp:
         self.tip_advice = tk.StringVar()
 
         # -------------------------------
-        # ALL 50 STATES TAX RATES (approx avg)
+        # ALL 50 STATES TAX RATES (approx avg) - pulled from ChatGPT, possibly not accurate
         # -------------------------------
         self.tax_rates = {
             "Alabama": 0.04, "Alaska": 0.00, "Arizona": 0.056,
@@ -49,17 +49,17 @@ class TipCalculatorApp:
 
         self.create_widgets()
 
-        # Auto update
+        # Auto update - Pulling the state tax 
         for var in [self.bill_amount, self.tip_percentage, self.state]:
             var.trace_add("write", self.calculate)
 
     # -------------------------------
-    # UI (MOBILE STYLE)
+    # UI (MOBILE STYLE) - Asked CHAT GPT to update the userface style
     # -------------------------------
-    def create_widgets(self):
+    def create_widgets(self): #This has all the fonts, colors, graphics and columns
 
-        container = tk.Frame(self.root, bg="#eaf4ff")
-        container.pack(fill="both", expand=True, padx=15, pady=10)
+        container = tk.Frame(self.root, bg="#eaf4ff") #text box, color
+        container.pack(fill="both", expand=True, padx=15, pady=10) #Size and information
 
         # TITLE
         tk.Label(
@@ -83,7 +83,7 @@ class TipCalculatorApp:
         styled_label("Bill Amount").grid(row=0, column=0, pady=8, padx=10, sticky="w")
         styled_entry(self.bill_amount).grid(row=0, column=1, padx=10)
 
-        # Tip %
+        # Tip % - Information, not calculation
         styled_label("Tip %").grid(row=1, column=0, pady=8, padx=10, sticky="w")
         ttk.Combobox(
             card,
@@ -139,7 +139,7 @@ class TipCalculatorApp:
     # -------------------------------
     # CALCULATIONS
     # -------------------------------
-    def calculate(self, *args):
+    def calculate(self, *args): #Calcuation for the ouptut of the text boxes above ^
         try:
             bill = float(self.bill_amount.get())
             tip_percent = int(self.tip_percentage.get().replace("%", "")) / 100
