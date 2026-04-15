@@ -50,7 +50,7 @@ class TipCalculatorApp: #The Machine - Userface titles and options
         self.create_widgets()
 
         # Auto update - Pulling the state tax 
-        for var in [self.bill_amount, self.tip_percentage, self.state]:
+        for var in [self.bill_amount, self.tip_percentage, self.state, self.num_people]:
             var.trace_add("write", self.calculate)
 
     # -------------------------------
