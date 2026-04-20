@@ -17,6 +17,7 @@ import subprocess
 import importlib.util
 import tkinter as tk
 from tkinter import messagebox
+import time
 
 # -------------------------------
 # STARTUP: VERSION & ENGINE CHECK
@@ -29,13 +30,13 @@ is_116 = messagebox.askyesno(
     "Are you currently using VS Code version 1.116.0?\n\n(Click 'No' if you are using an updated version)"
 )
 
-use_playback3 = False
+use_playsound3 = False
 use_alt_translator = False
 
 if is_116:
-    use_playback3 = messagebox.askyesno(
+    use_playsound3 = messagebox.askyesno(
         "Audio Engine Selection", 
-        "Since you are on v1.116.0, would you like to use the 'playback3' library for audio instead of the default 'just_playback'?"
+        "Since you are on v1.116.0, would you like to use the 'playsound3' library for audio instead of the default 'just_playback'?\n\n(Note: playsound3 is highly compatible but does not natively support pausing or seeking)."
     )
     
     use_alt_translator = messagebox.askyesno(
@@ -53,14 +54,13 @@ REQUIRED_PACKAGES = {
 }
 
 # Dynamically assign audio dependency
-if use_playback3:
-    REQUIRED_PACKAGES['playback3'] = 'playback3'
+if use_playsound3:
+    REQUIRED_PACKAGES['playsound3'] = 'playsound3'
 else:
     REQUIRED_PACKAGES['just_playback'] = 'just_playback'
 
 # Dynamically assign translator dependency
 if use_alt_translator:
-    # 4.0.0-rc1 is the most stable modern release of googletrans
     REQUIRED_PACKAGES['googletrans'] = 'googletrans==4.0.0-rc1'
 else:
     REQUIRED_PACKAGES['deep_translator'] = 'deep-translator'
@@ -107,11 +107,67 @@ current_file = None
 original_text = ""
 audio_file = "output.mp3"
 selected_language = "English"
+word_boundaries = []
+ui_word_timings = []
 
 # 1. Assign Audio Engine
-if use_playback3:
-    import playback3
-    player = playback3.Playback()
+if use_playsound3:
+    from playsound3 import playsound
+    
+    # Adapter class to mimic just_playback using playsound3
+    class Playsound3Adapter:
+        def __init__(self):
+            self.sound = None
+            self._active = False
+            self.paused = False
+            self.start_time = 0
+            self.duration = 100.0
+            self.audio_file = None
+
+        def load_file(self, filepath):
+            self.audio_file = filepath
+            global word_boundaries
+            if word_boundaries:
+                self.duration = word_boundaries[-1]["end"] + 1.0
+
+        def play(self):
+            self.sound = playsound(self.audio_file, block=False)
+            self._active = True
+            self.paused = False
+            self.start_time = time.time()
+
+        def stop(self):
+            if self.sound and self.sound.is_alive():
+                self.sound.stop()
+            self._active = False
+            self.paused = False
+
+        def pause(self):
+            # playsound3 can't pause natively, so we stop it
+            self.stop()
+            self.paused = True
+
+        def resume(self):
+            # Restarts from the beginning due to playsound3 limitations
+            self.play()
+
+        def seek(self, time_val):
+            pass # Seeking not supported in playsound3
+
+        @property
+        def active(self):
+            if self._active and self.sound:
+                if not self.sound.is_alive():
+                    self._active = False
+            return self._active
+
+        @property
+        def curr_pos(self):
+            if self.active:
+                return time.time() - self.start_time
+            return 0
+            
+    player = Playsound3Adapter()
 else:
     from just_playback import Playback
     player = Playback()
@@ -125,8 +181,6 @@ else:
     from deep_translator import GoogleTranslator
 
 is_user_seeking = False  
-word_boundaries = []
-ui_word_timings = []
 highlight_loop_id = None
 slider_loop_id = None
 
@@ -151,12 +205,10 @@ def safe_translate(text, target_lang_code):
     
     for chunk in chunks:
         if use_alt_translator:
-            # Using googletrans
             result = translator_engine.translate(chunk, dest=target_lang_code)
             if result and result.text:
                 translated_text += result.text + " "
         else:
-            # Using deep-translator
             translated_chunk = GoogleTranslator(source='auto', target=target_lang_code).translate(chunk)
             if translated_chunk:
                 translated_text += translated_chunk + " "
@@ -233,7 +285,7 @@ def update_highlight():
         highlight_loop_id = app.after(50, update_highlight)
 
 def toggle_pause():
-    if player.active:
+    if player.active or player.paused:
         if player.paused:
             player.resume()
             pause_btn.configure(text="Pause")
@@ -245,12 +297,11 @@ def toggle_pause():
 
 def stop_audio():
     if player.active:
-        player.pause() # Pause to prevent it playing in the background behind the prompt
+        player.pause() 
         
     if original_text:
         ans = messagebox.askyesno("Stopped", "Playback Stopped.\n\nClick YES to upload a new PDF, or NO to return to the Main Menu.")
         
-        # Hard stop regardless of choice
         player.stop()
         progress_slider.set(0)
         pause_btn.configure(text="Pause")
@@ -262,13 +313,11 @@ def stop_audio():
         else:
             reset_to_main_menu()
     else:
-        # If no text was loaded but stop was clicked somehow
         if player.active:
             player.stop()
         progress_slider.set(0)
 
 def reset_to_main_menu():
-    # Resets the UI entirely to its starting state
     global current_file, original_text
     current_file = None
     original_text = ""
@@ -289,7 +338,7 @@ def update_slider():
     
     if player.active:
         slider_loop_id = app.after(500, update_slider)
-    elif not player.active and progress_slider.get() >= player.duration - 0.5:
+    elif not player.active and not player.paused and progress_slider.get() >= player.duration - 0.5:
         progress_slider.set(0)
         status_label.configure(text="Finished")
         pause_btn.configure(text="Pause")
@@ -319,7 +368,6 @@ def process_content():
         target_code = 'es' if selected_language == "Spanish" else 'en'
         processed_text = safe_translate(original_text, target_code)
 
-        # Insert text first so Tkinter establishes its internal indexing
         text_box.configure(state="normal")
         text_box.delete("1.0", "end")
         text_box.insert("1.0", processed_text)
