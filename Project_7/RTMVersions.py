@@ -30,10 +30,17 @@ is_116 = messagebox.askyesno(
 )
 
 use_playback3 = False
+use_alt_translator = False
+
 if is_116:
     use_playback3 = messagebox.askyesno(
         "Audio Engine Selection", 
         "Since you are on v1.116.0, would you like to use the 'playback3' library for audio instead of the default 'just_playback'?"
+    )
+    
+    use_alt_translator = messagebox.askyesno(
+        "Translator Selection",
+        "Would you also like to use the alternative translator ('googletrans') optimized for v1.116.0 instead of 'deep-translator'?"
     )
 
 # -------------------------------
@@ -42,14 +49,22 @@ if is_116:
 REQUIRED_PACKAGES = {
     'customtkinter': 'customtkinter',
     'edge_tts': 'edge-tts',
-    'pypdf': 'pypdf',
-    'deep_translator': 'deep-translator'
+    'pypdf': 'pypdf'
 }
 
+# Dynamically assign audio dependency
 if use_playback3:
     REQUIRED_PACKAGES['playback3'] = 'playback3'
 else:
     REQUIRED_PACKAGES['just_playback'] = 'just_playback'
+
+# Dynamically assign translator dependency
+if use_alt_translator:
+    # 4.0.0-rc1 is the most stable modern release of googletrans
+    REQUIRED_PACKAGES['googletrans'] = 'googletrans==4.0.0-rc1'
+else:
+    REQUIRED_PACKAGES['deep_translator'] = 'deep-translator'
+
 
 missing_packages = []
 for module, pip_name in REQUIRED_PACKAGES.items():
@@ -84,24 +99,30 @@ import asyncio
 import edge_tts
 import os
 from pypdf import PdfReader
-from deep_translator import GoogleTranslator
 
 # -------------------------------
-# GLOBAL STATE & AUDIO ENGINE
+# GLOBAL STATE & DYNAMIC ENGINES
 # -------------------------------
 current_file = None
 original_text = ""
 audio_file = "output.mp3"
 selected_language = "English"
 
-# Dynamically assign the audio player based on user startup selection
+# 1. Assign Audio Engine
 if use_playback3:
     import playback3
-    # Assuming playback3 acts as a drop-in replacement with a Playback object
     player = playback3.Playback()
 else:
     from just_playback import Playback
     player = Playback()
+
+# 2. Assign Translator Engine
+translator_engine = None
+if use_alt_translator:
+    from googletrans import Translator
+    translator_engine = Translator()
+else:
+    from deep_translator import GoogleTranslator
 
 is_user_seeking = False  
 word_boundaries = []
@@ -129,9 +150,16 @@ def safe_translate(text, target_lang_code):
     translated_text = ""
     
     for chunk in chunks:
-        translated_chunk = GoogleTranslator(source='auto', target=target_lang_code).translate(chunk)
-        if translated_chunk:
-            translated_text += translated_chunk + " "
+        if use_alt_translator:
+            # Using googletrans
+            result = translator_engine.translate(chunk, dest=target_lang_code)
+            if result and result.text:
+                translated_text += result.text + " "
+        else:
+            # Using deep-translator
+            translated_chunk = GoogleTranslator(source='auto', target=target_lang_code).translate(chunk)
+            if translated_chunk:
+                translated_text += translated_chunk + " "
             
     return translated_text
 
