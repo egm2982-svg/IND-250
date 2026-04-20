@@ -29,7 +29,7 @@ root.withdraw()
 
 is_116 = messagebox.askyesno(
     "VS Code Version Check", 
-    "Are you currently using VS Code version 1.116.0?\n\n(Click 'No' if you are using an updated version)"
+    "Are you currently using Emilie's PC or Jibris PC?\n\n(Click 'No' if you are using Emilie's PC)"
 )
 
 use_playsound3 = False
@@ -464,9 +464,21 @@ def change_language(choice):
         threading.Thread(target=process_content, daemon=True).start()
 
 def exit_app():
+    global highlight_loop_id, slider_loop_id
+    
+    # Cancel any running background loops
+    if highlight_loop_id:
+        app.after_cancel(highlight_loop_id)
+    if slider_loop_id:
+        app.after_cancel(slider_loop_id)
+        
+    # Stop audio
     if player.active:
         player.stop()
+        
+    # Completely destroy the window
     app.quit()
+    app.destroy()
 
 # -------------------------------
 # UI SETUP
