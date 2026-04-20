@@ -9,8 +9,7 @@
 # 1. Open the Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
 # 2. Select "Python: Select Interpreter" -> Choose your virtual environment
 # 3. Open a new integrated terminal (Terminal -> New Terminal)
-# 4. Run the following command:
-#    pip install customtkinter edge-tts pypdf deep-translator just_playback
+# 4. Run the pip install command for your chosen packages.
 # ==============================================================================
 
 import sys
@@ -20,15 +19,37 @@ import tkinter as tk
 from tkinter import messagebox
 
 # -------------------------------
+# STARTUP: VERSION & ENGINE CHECK
+# -------------------------------
+root = tk.Tk()
+root.withdraw() 
+
+is_116 = messagebox.askyesno(
+    "VS Code Version Check", 
+    "Are you currently using VS Code version 1.116.0?\n\n(Click 'No' if you are using an updated version)"
+)
+
+use_playback3 = False
+if is_116:
+    use_playback3 = messagebox.askyesno(
+        "Audio Engine Selection", 
+        "Since you are on v1.116.0, would you like to use the 'playback3' library for audio instead of the default 'just_playback'?"
+    )
+
+# -------------------------------
 # DEPENDENCY BOOTSTRAPPER
 # -------------------------------
 REQUIRED_PACKAGES = {
     'customtkinter': 'customtkinter',
     'edge_tts': 'edge-tts',
     'pypdf': 'pypdf',
-    'deep_translator': 'deep-translator',
-    'just_playback': 'just_playback'
+    'deep_translator': 'deep-translator'
 }
+
+if use_playback3:
+    REQUIRED_PACKAGES['playback3'] = 'playback3'
+else:
+    REQUIRED_PACKAGES['just_playback'] = 'just_playback'
 
 missing_packages = []
 for module, pip_name in REQUIRED_PACKAGES.items():
@@ -36,10 +57,6 @@ for module, pip_name in REQUIRED_PACKAGES.items():
         missing_packages.append(pip_name)
 
 if missing_packages:
-    root = tk.Tk()
-    root.withdraw() 
-    
-    # Updated prompt to include the VS Code 1.116.0 note
     prompt_message = (
         f"The following required packages are missing:\n\n{', '.join(missing_packages)}\n\n"
         f"Would you like to install them automatically now?\n\n"
@@ -68,18 +85,24 @@ import edge_tts
 import os
 from pypdf import PdfReader
 from deep_translator import GoogleTranslator
-from just_playback import Playback
 
 # -------------------------------
-# GLOBAL STATE
+# GLOBAL STATE & AUDIO ENGINE
 # -------------------------------
 current_file = None
 original_text = ""
 audio_file = "output.mp3"
 selected_language = "English"
 
-# Audio Player and Timings
-player = Playback()
+# Dynamically assign the audio player based on user startup selection
+if use_playback3:
+    import playback3
+    # Assuming playback3 acts as a drop-in replacement with a Playback object
+    player = playback3.Playback()
+else:
+    from just_playback import Playback
+    player = Playback()
+
 is_user_seeking = False  
 word_boundaries = []
 ui_word_timings = []
